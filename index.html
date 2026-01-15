@@ -71,7 +71,7 @@
         }
         .dragging { transition: none !important; z-index: 2000 !important; }
 
-        /* 牌義視窗優化 */
+        /* 牌義視窗 */
         #tooltip {
             position: absolute;
             background: rgba(0, 0, 0, 0.85);
@@ -223,24 +223,41 @@
         window.addEventListener('mousemove', (e) => { if (!isPanning) return; panOffsetX = e.clientX - startX; panOffsetY = e.clientY - startY; mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`; });
         window.addEventListener('mouseup', (e) => { if (e.button === 1) { isPanning = false; document.body.style.cursor = 'default'; } });
 
-        // 手機單指平移（只在沒點到牌時）
-        let touchStartX = 0, touchStartY = 0, touchedElement = null;
+        // 手機雙指平移與縮放（單指完全不干擾）
+        let initialDistance = 0;
+        let initialMidX = 0;
+        let initialMidY = 0;
+        let initialOffsetX = panOffsetX;
+        let initialOffsetY = panOffsetY;
+
         mainCanvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                touchedElement = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-                if (touchedElement && touchedElement.classList.contains('card')) return;
-                touchStartX = e.touches[0].clientX - panOffsetX;
-                touchStartY = e.touches[0].clientY - panOffsetY;
-            }
-        }, { passive: true });
-        mainCanvas.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && touchedElement && !touchedElement.classList.contains('card')) {
+            if (e.touches.length === 2) {
                 e.preventDefault();
-                panOffsetX = e.touches[0].clientX - touchStartX;
-                panOffsetY = e.touches[0].clientY - touchStartY;
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                initialDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                initialMidX = (t1.clientX + t2.clientX) / 2;
+                initialMidY = (t1.clientY + t2.clientY) / 2;
+                initialOffsetX = panOffsetX;
+                initialOffsetY = panOffsetY;
+            }
+        });
+
+        mainCanvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const midX = (t1.clientX + t2.clientX) / 2;
+                const midY = (t1.clientY + t2.clientY) / 2;
+
+                // 平移
+                panOffsetX = initialOffsetX + (midX - initialMidX);
+                panOffsetY = initialOffsetY + (midY - initialMidY);
+
                 mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`;
             }
-        }, { passive: false });
+        });
 
         function createStars() {
             const container = document.getElementById('stars');
@@ -297,6 +314,7 @@
                 card.innerHTML = `<div class="card-face card-back"></div><div class="card-face card-front ${elementClass}">${deck[i]}</div>`;
                 card.onclick = (e) => handleCardClick(card, e);
 
+                // 桌面 hover
                 card.addEventListener('mouseenter', (e) => {
                     if (card.classList.contains('selected') && !('ontouchstart' in window)) {
                         hoverTimer = setTimeout(() => showTooltip(card, e.clientX, e.clientY), 1000);
@@ -310,6 +328,7 @@
                     }
                 });
 
+                // 手機點擊顯示牌義
                 card.addEventListener('touchend', (e) => {
                     if (card.classList.contains('selected')) {
                         e.preventDefault();
@@ -338,7 +357,7 @@
                     c.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${angle}deg)`;
                 });
                 isSpread = true;
-                hint.innerText = "請抽牌，雙指可拖動/縮放桌面";
+                hint.innerText = "請抽牌，雙指拖動/縮放桌面";
             } else if (!card.classList.contains('selected')) {
                 pickCard(card);
             }
