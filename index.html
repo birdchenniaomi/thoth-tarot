@@ -16,14 +16,14 @@
         }
         @media (min-width: 768px) { :root { --card-w: 90px; --card-h: 145px; } }
         body {
-            background: #020205; color: #e0e0e0; height: 100vh; margin: 0;
+            background: #CC9016; color: #e0e0e0; height: 100vh; margin: 0;
             overflow: hidden; font-family: "PingFang TC", sans-serif;
             display: flex; flex-direction: column; align-items: center;
             touch-action: pan-x pan-y pinch-zoom;
         }
         .stars-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            background: radial-gradient(ellipse at bottom, #342063 0%, #090A0F 100%);
             z-index: -1;
         }
         .star { position: absolute; background: white; border-radius: 50%; opacity: 0.3; animation: twinkle var(--t) infinite ease-in-out; }
@@ -46,24 +46,14 @@
         .card {
             position: absolute; width: var(--card-w); height: var(--card-h);
             cursor: grab; transform-style: preserve-3d;
-            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, z-index 0s;
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1), filter 0.3s;
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .card.wave { 
-            transform: translateY(-15px) scale(1.08) !important; 
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6); 
-            z-index: 1000 !important;
-        }
-        .card.selected-wave { 
-            transform: translateY(-30px) scale(1.15) !important; 
-            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.9); 
-            z-index: 2000 !important;
-        }
         .card.flash { filter: brightness(1.8) drop-shadow(0 0 10px #fff); }
         .card-face { position: absolute; width: 100%; height: 100%; border-radius: 8px; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; box-sizing: border-box; }
-        .card-back { background: #0f0f1a; border: 1px solid #333; }
-        .card-back::after { content: "✺"; color: var(--gold); opacity: 0.4; font-size: 30px; }
+        .card-back { background: #4A3204; border: 2px solid #737373; }
+        .card-back::after { content: "𖤓"; color: var(--gold); opacity: 0.4; font-size: 70px; }
         .card-front {
             color: #111; transform: rotateY(180deg);
             font-weight: bold; font-size: 1rem; border: 4px double var(--gold);
@@ -104,6 +94,15 @@
         #tooltip.visible { opacity: 1; }
         #tooltip h4 { margin: 8px 0 4px; color: var(--gold); font-size: 1rem; }
         #tooltip p { margin: 4px 0; }
+
+        @keyframes shuffle1 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-120px, -10px) rotate(-12deg); } }
+        @keyframes shuffle2 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(120px, 5px) rotate(15deg); } }
+        @keyframes shuffle3 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-70px, 15px) rotate(-8deg); } }
+        @keyframes shuffle4 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(70px, -15px) rotate(10deg); } }
+        .sh-1 { animation: shuffle1 0.4s ease-in-out infinite; }
+        .sh-2 { animation: shuffle2 0.4s ease-in-out infinite; }
+        .sh-3 { animation: shuffle3 0.4s ease-in-out infinite; }
+        .sh-4 { animation: shuffle4 0.4s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -216,16 +215,16 @@
         let selectedCount = 0;
         let hoverTimer = null;
 
-        let panOffsetX = 0, panOffsetY = 0;
-        let initialMidX = 0, initialMidY = 0, initialOffsetX = 0, initialOffsetY = 0;
+        let isPanning = false, panOffsetX = 0, panOffsetY = 0, startX, startY;
 
         // 電腦中鍵平移
-        let isPanning = false, startX, startY;
-        window.addEventListener('mousedown', (e) => { if (e.button === 1) { e.preventDefault(); isPanning = true; startX = e.clientX - panOffsetX; startY = e.clientY - panOffsetY; } });
+        window.addEventListener('mousedown', (e) => { if (e.button === 1) { e.preventDefault(); isPanning = true; document.body.style.cursor = 'move'; startX = e.clientX - panOffsetX; startY = e.clientY - panOffsetY; } });
         window.addEventListener('mousemove', (e) => { if (!isPanning) return; panOffsetX = e.clientX - startX; panOffsetY = e.clientY - startY; mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`; });
-        window.addEventListener('mouseup', (e) => { if (e.button === 1) { isPanning = false; } });
+        window.addEventListener('mouseup', (e) => { if (e.button === 1) { isPanning = false; document.body.style.cursor = 'default'; } });
 
-        // 手機雙指平移
+        // 手機雙指平移（單指不觸發）
+        let initialMidX = 0, initialMidY = 0, initialOffsetX = 0, initialOffsetY = 0;
+
         mainCanvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const t1 = e.touches[0];
@@ -294,43 +293,19 @@
             if (hoverTimer) clearTimeout(hoverTimer);
         }
 
-        function spreadCards() {
-            const isMobile = 'ontouchstart' in window;
-            const radius = isMobile ? Math.min(window.innerWidth * 0.9, window.innerHeight * 0.6) / 2 : 350;
-            const cards = document.querySelectorAll('.card');
-            cards.forEach((c, i) => {
-                const angle = (i / 78) * Math.PI * 2;
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius * 0.6;
-                c.style.transform = `translate(${x}px, ${y}px) rotate(${angle * 180 / Math.PI}deg)`;
-            });
-        }
-
         function initCards() {
             table.innerHTML = '';
             deck.sort(() => Math.random() - 0.5);
-            const isMobile = 'ontouchstart' in window;
-            const radius = isMobile ? Math.min(window.innerWidth * 0.9, window.innerHeight * 0.6) / 2 : 350;
-
             for (let i = 0; i < 78; i++) {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.style.zIndex = i;
                 const elementClass = getElementClass(deck[i]);
                 card.innerHTML = `<div class="card-face card-back"></div><div class="card-face card-front ${elementClass}">${deck[i]}</div>`;
-                card.onclick = () => {
-                    if (!isSpread) {
-                        isSpread = true;
-                        hint.innerText = "請抽牌，雙指拖動/縮放桌面";
-                        spreadCards();
-                    } else if (!card.classList.contains('selected')) {
-                        pickCard(card);
-                    }
-                };
+                card.onclick = (e) => handleCardClick(card, e);
 
-                // 桌面 hover
                 card.addEventListener('mouseenter', (e) => {
-                    if (card.classList.contains('selected') && !isMobile) {
+                    if (card.classList.contains('selected') && !('ontouchstart' in window)) {
                         hoverTimer = setTimeout(() => showTooltip(card, e.clientX, e.clientY), 1000);
                     }
                 });
@@ -342,82 +317,38 @@
                     }
                 });
 
-                // 手機波浪 + 選牌手勢
-                card.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
-                    if (card.classList.contains('selected')) return;
-                    card.classList.add('wave');
-                });
-
-                card.addEventListener('touchmove', (e) => {
-                    e.stopPropagation();
-                    const touch = e.touches[0];
-                    const rect = card.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    const dist = Math.hypot(touch.clientX - centerX, touch.clientY - centerY);
-                    if (dist < 80) {
-                        card.classList.add('wave');
-                    } else {
-                        card.classList.remove('wave');
-                    }
-                });
-
                 card.addEventListener('touchend', (e) => {
-                    e.stopPropagation();
-                    card.classList.remove('wave');
-                });
-
-                // 手機長按 + 上下刷抽牌
-                let longPressTimer;
-                let touchStartY = 0;
-                card.addEventListener('touchstart', (e) => {
-                    if (card.classList.contains('selected')) return;
-                    touchStartY = e.touches[0].clientY;
-                    longPressTimer = setTimeout(() => {
-                        card.classList.add('selected-wave');
-                    }, 400); // 長按 0.4 秒進入選中狀態
-                });
-
-                card.addEventListener('touchmove', (e) => {
-                    if (longPressTimer) {
-                        const deltaY = e.touches[0].clientY - touchStartY;
-                        if (Math.abs(deltaY) > 30) {
-                            card.classList.add('selected-wave');
-                        }
-                    }
-                });
-
-                card.addEventListener('touchend', (e) => {
-                    clearTimeout(longPressTimer);
-                    if (card.classList.contains('selected-wave')) {
-                        const deltaY = e.changedTouches[0].clientY - touchStartY;
-                        card.classList.remove('selected-wave');
-                        if (Math.abs(deltaY) > 60) {
-                            pickCard(card);
-                        }
-                    }
-                });
-
-                // 手機點擊已抽出牌看牌義
-                card.addEventListener('click', (e) => {
-                    if (isMobile && card.classList.contains('selected')) {
+                    if (card.classList.contains('selected')) {
                         e.preventDefault();
-                        const rect = card.getBoundingClientRect();
-                        const x = rect.left + rect.width / 2;
-                        const y = rect.top + rect.height / 2;
+                        const touch = e.changedTouches[0];
                         if (tooltip.classList.contains('visible')) {
                             hideTooltip();
                         } else {
-                            showTooltip(card, x, y);
+                            showTooltip(card, touch.clientX, touch.clientY);
                         }
                     }
                 });
 
                 table.appendChild(card);
             }
+        }
 
-            if (isSpread) spreadCards();
+        function handleCardClick(card, e) {
+            if ('ontouchstart' in window && card.classList.contains('selected')) return;
+            if (!isSpread) {
+                const cards = document.querySelectorAll('.card');
+                const radius = 350;
+                cards.forEach((c, i) => {
+                    const angle = ((i / 78) - 0.5) * 110;
+                    const x = Math.sin(angle * Math.PI / 180) * radius;
+                    const y = (1 - Math.cos(angle * Math.PI / 180)) * radius;
+                    c.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${angle}deg)`;
+                });
+                isSpread = true;
+                hint.innerText = "請抽牌，雙指拖動/縮放桌面";
+            } else if (!card.classList.contains('selected')) {
+                pickCard(card);
+            }
         }
 
         function pickCard(card) {
@@ -434,12 +365,26 @@
 
         function resetGame() {
             hideTooltip();
-            isSpread = false;
-            selectedCount = 0;
-            panOffsetX = 0;
-            panOffsetY = 0;
+            const cards = document.querySelectorAll('.card');
+            isSpread = false; selectedCount = 0;
+            panOffsetX = 0; panOffsetY = 0;
             mainCanvas.style.transform = `translate(0,0)`;
-            initCards();
+            cards.forEach((card, i) => {
+                card.style.transform = `translate(0,0) rotate(0deg)`;
+                card.style.zIndex = i;
+                card.classList.remove('selected');
+            });
+            setTimeout(() => {
+                cards.forEach((card, i) => {
+                    const type = (i % 4) + 1;
+                    card.classList.add(`sh-${type}`);
+                    card.style.zIndex = Math.floor(Math.random() * 80);
+                });
+            }, 600);
+            setTimeout(() => {
+                cards.forEach(card => card.classList.remove('sh-1', 'sh-2', 'sh-3', 'sh-4'));
+                initCards();
+            }, 1800);
         }
 
         function makeDraggable(el) {
