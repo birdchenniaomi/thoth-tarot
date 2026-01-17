@@ -71,58 +71,48 @@
         }
         .dragging { transition: none !important; z-index: 2000 !important; }
         #tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.85);
-            color: #e0e0e0;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid var(--gold);
-            font-size: 0.8rem;
-            line-height: 1.5;
-            width: 280px;
-            max-width: 90vw;
-            box-sizing: border-box;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 3000;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+            position: absolute; background: rgba(0, 0, 0, 0.85); color: #e0e0e0;
+            padding: 12px 16px; border-radius: 10px; border: 1px solid var(--gold);
+            font-size: 0.8rem; line-height: 1.5; width: 280px; max-width: 90vw;
+            box-sizing: border-box; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            z-index: 3000; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
             word-wrap: break-word;
         }
         #tooltip.visible { opacity: 1; }
         #tooltip h4 { margin: 8px 0 4px; color: var(--gold); font-size: 1rem; }
         #tooltip p { margin: 4px 0; }
-        @keyframes shuffle1 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-120px, -10px) rotate(-12deg); } }
-        @keyframes shuffle2 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(120px, 5px) rotate(15deg); } }
-        @keyframes shuffle3 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-70px, 15px) rotate(-8deg); } }
-        @keyframes shuffle4 { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(70px, -15px) rotate(10deg); } }
-        .sh-1 { animation: shuffle1 0.4s ease-in-out infinite; }
-        .sh-2 { animation: shuffle2 0.4s ease-in-out infinite; }
-        .sh-3 { animation: shuffle3 0.4s ease-in-out infinite; }
-        .sh-4 { animation: shuffle4 0.4s ease-in-out infinite; }
 
-        /* 左側選單 */
+        /* --- 左側選單修正版 --- */
         #deckPanelToggle {
             position: fixed; left: 10px; top: 50%; transform: translateY(-50%);
-            padding: 10px 15px; background: rgba(0,0,0,0.7); color: var(--gold);
+            padding: 15px 10px; background: rgba(0,0,0,0.8); color: var(--gold);
             border: 1px solid var(--gold); border-radius: 0 10px 10px 0;
             cursor: pointer; z-index: 400; writing-mode: vertical-rl; font-size: 1.2rem;
             backdrop-filter: blur(5px);
         }
         #deckPanel {
-            position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: rgba(0,0,0,0.9);
+            position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: rgba(0,0,0,0.95);
             border-right: 1px solid var(--gold); z-index: 350; transition: left 0.4s ease;
-            padding: 20px; box-sizing: border-box; overflow-y: auto; backdrop-filter: blur(10px);
+            padding: 20px 10px; box-sizing: border-box; overflow-y: auto; backdrop-filter: blur(10px);
         }
         #deckPanel.open { left: 0; }
-        #deckPanel h3 { color: var(--gold); margin: 20px 0 10px; text-align: center; }
-        #deckPanel .card-btn {
-            display: block; width: 100%; margin: 5px 0; padding: 8px;
-            background: rgba(212,175,55,0.2); color: #e0e0e0; border: 1px solid var(--gold);
-            border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.9rem;
+        
+        .cat-group { margin-bottom: 10px; border-bottom: 1px solid rgba(212,175,55,0.2); }
+        .cat-title {
+            width: 100%; padding: 12px; background: none; border: none; color: var(--gold);
+            font-size: 1.1rem; font-weight: bold; text-align: left; cursor: pointer;
+            display: flex; justify-content: space-between;
         }
-        #deckPanel .card-btn:hover { background: var(--gold); color: #000; }
+        .cat-title:hover { background: rgba(212,175,55,0.1); }
+        .cat-content { display: none; padding: 5px 0 15px 10px; flex-wrap: wrap; gap: 5px; }
+        .cat-content.active { display: flex; }
+
+        .card-btn {
+            display: inline-block; width: 46%; margin: 2px; padding: 8px 5px;
+            background: rgba(255,255,255,0.05); color: #e0e0e0; border: 1px solid #444;
+            border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.85rem;
+        }
+        .card-btn:hover { background: var(--gold); color: #000; border-color: var(--gold); }
     </style>
 </head>
 <body>
@@ -142,7 +132,6 @@
     </div>
     <div id="tooltip"></div>
 
-    <!-- 左側選單 -->
     <div id="deckPanelToggle">選牌</div>
     <div id="deckPanel"></div>
 
@@ -150,160 +139,28 @@
         const thothCards = ["0 愚者", "I 魔術師", "II 女教皇", "III 皇后", "IV 皇帝", "V 教皇", "VI 戀人", "VII 戰車", "VIII 正義", "IX 隱士", "X 命運之輪", "XI 力量", "XII 倒吊人", "XIII 死亡", "XIV 節制", "XV 惡魔", "XVI 高塔", "XVII 星星", "XVIII 月亮", "XIX 太陽", "XX 永恆", "XXI 宇宙", "權杖騎士", "權杖皇后", "權杖王子", "權杖公主", "權杖1", "權杖2", "權杖3", "權杖4", "權杖5", "權杖6", "權杖7", "權杖8", "權杖9", "權杖10", "聖杯騎士", "聖杯皇后", "聖杯王子", "聖杯公主", "聖杯1", "聖杯2", "聖杯3", "聖杯4", "聖杯5", "聖杯6", "聖杯7", "聖杯8", "聖杯9", "聖杯10", "寶劍騎士", "寶劍皇后", "寶劍王子", "寶劍公主", "寶劍1", "寶劍2", "寶劍3", "寶劍4", "寶劍5", "寶劍6", "寶劍7", "寶劍8", "寶劍9", "寶劍10", "圓盤騎士", "圓盤皇后", "圓盤王子", "圓盤公主", "圓盤1", "圓盤2", "圓盤3", "圓盤4", "圓盤5", "圓盤6", "圓盤7", "圓盤8", "圓盤9", "圓盤10"];
 
         const cardMeanings = {
-            "0 愚者": {
-                general: "純粹潛能、無限可能、冒險開始、純真、無知、無畏、靈性旅程的開端",
-                work: "新機會、創業、轉職、跳脫框架的創意、風險投資",
-                love: "純粹吸引力、不設防的愛、未知戀情、自由不羈的關係",
-                health: "活力充沛、恢復力強，但需注意意外或魯莽傷害",
-                reverse: "魯莽、停滯、害怕未知、錯過機會、愚蠢決定"
-            },
-            "I 魔術師": {
-                general: "意志力、創造力、技巧、行動開始、掌握元素、溝通、變幻",
-                work: "創業成功、專案順利、多才多藝、銷售溝通強",
-                love: "魅力四射、主動追求、甜言蜜語、關係快速進展",
-                health: "精力旺盛、恢復快速、手術順利",
-                reverse: "欺騙、技巧不純、計畫受阻、缺乏焦點、操縱"
-            },
-            "II 女教皇": {
-                general: "直覺、神秘、潛意識、內在智慧、陰性力量、隱藏知識",
-                work: "研究、學習、靈感、幕後規劃、需要耐心等待",
-                love: "神秘吸引力、靈魂連結、柏拉圖式愛情、內心情感",
-                health: "婦科問題、荷爾蒙平衡、心理健康、夢境訊息",
-                reverse: "秘密曝光、直覺受阻、情緒壓抑、表面假象"
-            },
-            "III 皇后": {
-                general: "豐饒、母性、滋養、創造力、自然、美麗、感官享受",
-                work: "創作產業、美容、美食、穩定成長、團隊照顧",
-                love: "浪漫、感性、被寵愛、生育、穩定關係",
-                health: "生育力強、身體豐滿、恢復良好",
-                reverse: "依賴、嫉妒、情緒化、過度溺愛、浪費"
-            },
-            "IV 皇帝": {
-                general: "結構、權威、穩定、控制、父性、理性、領導力",
-                work: "管理職、創業、穩定事業、規則制度",
-                love: "穩定關係、保護欲強、傳統婚姻",
-                health: "骨骼強健、體力好，但需注意僵硬",
-                reverse: "專制、頑固、缺乏彈性、權力濫用"
-            },
-            "V 教皇": {
-                general: "傳統、精神指導、教育、道德、宗教、尋求建議",
-                work: "教育、顧問、傳統行業、需要證照",
-                love: "傳統戀愛、精神伴侶、長輩介紹",
-                health: "需要專業醫師、傳統療法",
-                reverse: "教條、偏見、錯誤指導、非傳統"
-            },
-            "VI 戀人": {
-                general: "選擇、關係、和諧、吸引力、整合對立、愛與美",
-                work: "合作、合夥、重要選擇、平衡工作生活",
-                love: "戀愛、婚姻、靈魂伴侶、重大感情抉擇",
-                health: "荷爾蒙平衡、伴侶支持健康",
-                reverse: "不和、分離、錯誤選擇、誘惑"
-            },
-            "VII 戰車": {
-                general: "勝利、意志力、前進、控制情緒、旅程、決心",
-                work: "事業突破、克服障礙、升職、出差",
-                love: "克服感情障礙、積極追求",
-                health: "克服疾病、恢復控制力",
-                reverse: "方向迷失、失敗、衝動、事故"
-            },
-            "VIII 正義": {
-                general: "平衡、因果、公平、真相、法律、調整",
-                work: "合約、法律事務、公平評估、裁員或升職",
-                love: "關係平衡、离婚或婚姻、公平對待",
-                health: "平衡恢復、因果疾病",
-                reverse: "不公、訴訟、偏見、失衡"
-            },
-            "IX 隱士": {
-                general: "內省、孤獨、指導、智慧、尋求答案、內在光芒",
-                work: "研究、獨立工作、退休、導師",
-                love: "獨身、內心探索、年長伴侶",
-                health: "休養、慢性病、心理治療",
-                reverse: "孤立、拒絕幫助、錯誤指引"
-            },
-            "X 命運之輪": {
-                general: "循環、變化、命運、轉折點、機會、輪迴",
-                work: "轉職、運氣轉變、意外機會",
-                love: "緣分、關係變化、輪迴戀情",
-                health: "循環性疾病、運氣恢復",
-                reverse: "惡運、停滯、意外阻礙"
-            },
-            "XI 力量": {
-                general: "內在力量、勇氣、耐心、控制慾望、溫柔征服（托特稱Lust）",
-                work: "克服困難、熱情投入、領導力",
-                love: "激情、性吸引力、征服慾望",
-                health: "強健體力、克服病痛",
-                reverse: "軟弱、恐懼、慾望失控"
-            },
-            "XII 倒吊人": {
-                general: "犧牲、逆轉視角、放下、啟示、等待、轉變",
-                work: "暫停、轉型期、犧牲短期利益",
-                love: "犧牲、單戀、逆轉關係",
-                health: "懸而未決的病、需要休息",
-                reverse: "頑抗變化、無謂犧牲"
-            },
-            "XIII 死亡": {
-                general: "轉變、結束與新生、蛻變、不可避免的改變",
-                work: "結束舊職、新開始、轉型",
-                love: "關係結束、新戀情、分手",
-                health: "手術、重大改變、康復",
-                reverse: "停滯、害怕改變、腐敗"
-            },
-            "XIV 節制": {
-                general: "平衡、調和、融合對立、節制、療癒（托特稱Art）",
-                work: "協調、團隊合作、中庸之道",
-                love: "和諧關係、調適彼此",
-                health: "平衡恢復、替代療法",
-                reverse: "極端、衝突、不和"
-            },
-            "XV 惡魔": {
-                general: "束縛、慾望、物質依賴、陰影面、誘惑、權力遊戲",
-                work: "金錢糾紛、權力鬥爭、成癮工作",
-                love: "肉體關係、依賴、虐戀",
-                health: "成癮、慢性壓力",
-                reverse: "解放、克服誘惑"
-            },
-            "XVI 高塔": {
-                general: "突變、破壞舊結構、啟示、覺醒、災難",
-                work: "突發失業、公司重組、危機",
-                love: "分手、關係崩潰、真相曝光",
-                health: "突發疾病、意外",
-                reverse: "避免災難、緩慢改變"
-            },
-            "XVII 星星": {
-                general: "希望、靈感、寧靜、療癒、宇宙指引",
-                work: "靈感爆發、新方向、藝術創作",
-                love: "理想愛情、遠距離、希望重燃",
-                health: "康復、身心療癒",
-                reverse: "失望、缺乏信心"
-            },
-            "XVIII 月亮": {
-                general: "幻象、恐懼、直覺、潛意識、欺騙、神秘",
-                work: "不確定、隱藏風險、創意產業",
-                love: "欺騙、不安、幻想愛情",
-                health: "心理問題、婦科、夢魘",
-                reverse: "真相浮現、克服恐懼"
-            },
-            "XIX 太陽": {
-                general: "喜悅、成功、活力、清晰、孩子、光明",
-                work: "成功、認可、快樂工作",
-                love: "幸福關係、生子、熱戀",
-                health: "活力充沛、完全康復",
-                reverse: "暫時陰霾、傲慢"
-            },
-            "XX 永恆": {
-                general: "審判、重生、覺醒、業力清算、新紀元（托特稱Aeon）",
-                work: "重大轉變、業力回饋、呼召",
-                love: "靈魂重逢、業力關係",
-                health: "重生、重大療癒",
-                reverse: "延遲、無法放下過去"
-            },
-            "XXI 宇宙": {
-                general: "完成、圓滿、整合、宇宙合一、旅程結束",
-                work: "目標達成、升職、圓滿結案",
-                love: "靈魂伴侶、婚姻、長久穩定",
-                health: "完全康復、身心合一",
-                reverse: "延遲、未完成、固執"
-            },
+            "0 愚者": { general: "純粹潛能、無限可能、冒險開始、純真、無知、無畏、靈性旅程的開端", work: "新機會、創業、轉職、跳脫框架的創意、風險投資", love: "純粹吸引力、不設防的愛、未知戀情、自由不羈的關係", health: "活力充沛、恢復力強，但需注意意外或魯莽傷害", reverse: "魯莽、停滯、害怕未知、錯過機會、愚蠢決定" },
+            "I 魔術師": { general: "意志力、創造力、技巧、行動開始、掌握元素、溝通、變幻", work: "創業成功、專案順利、多才多藝、銷售溝通強", love: "魅力四射、主動追求、甜言蜜語、關係快速進展", health: "精力旺盛、恢復快速、手術順利", reverse: "欺騙、技巧不純、計畫受阻、缺乏焦點、操縱" },
+            "II 女教皇": { general: "直覺、神秘、潛意識、內在智慧、陰性力量、隱藏知識", work: "研究、學習、靈感、幕後規劃、需要耐心等待", love: "神秘吸引力、靈魂連結、柏拉圖式愛情、內心情感", health: "婦科問題、荷爾蒙平衡、心理健康、夢境訊息", reverse: "秘密曝光、直覺受阻、情緒壓抑、表面假象" },
+            "III 皇后": { general: "豐饒、母性、滋養、創造力、自然、美麗、感官享受", work: "創作產業、美容、美食、穩定成長、團隊照顧", love: "浪漫、感性、被寵愛、生育、穩定關係", health: "生育力強、身體豐滿、恢復良好", reverse: "依賴、嫉妒、情緒化、過度溺愛、浪費" },
+            "IV 皇帝": { general: "結構、權威、穩定、控制、父性、理性、領導力", work: "管理職、創業、穩定事業、規則制度", love: "穩定關係、保護欲強、傳統婚姻", health: "骨骼強健、體力好，但需注意僵硬", reverse: "專制、頑固、缺乏彈性、權力濫用" },
+            "V 教皇": { general: "傳統、精神指導、教育、道德、宗教、尋求建議", work: "教育、顧問、傳統行業、需要證照", love: "傳統戀愛、精神伴侶、長輩介紹", health: "需要專業醫師、傳統療法", reverse: "教條、偏見、錯誤指導、非傳統" },
+            "VI 戀人": { general: "選擇、關係、和諧、吸引力、整合對立、愛與美", work: "合作、合夥、重要選擇、平衡工作生活", love: "戀愛、婚姻、靈魂伴侶、重大感情抉擇", health: "荷爾蒙平衡、伴侶支持健康", reverse: "不和、分離、錯誤選擇、誘惑" },
+            "VII 戰車": { general: "勝利、意志力、前進、控制情緒、旅程、決心", work: "事業突破、克服障礙、升職、出差", love: "克服感情障礙、積極追求", health: "克服疾病、恢復控制力", reverse: "方向迷失、失敗、衝動、事故" },
+            "VIII 正義": { general: "平衡、因果、公平、真相、法律、調整", work: "合約、法律事務、公平評估、裁員或升職", love: "關係平衡、离婚或婚姻、公平對待", health: "平衡恢復、因果疾病", reverse: "不公、訴訟、偏見、失衡" },
+            "IX 隱士": { general: "內省、孤獨、指導、智慧、尋求答案、內在光芒", work: "研究、獨立工作、退休、導師", love: "獨身、內心探索、年長伴侶", health: "休養、慢性病、心理治療", reverse: "孤立、拒絕幫助、錯誤指引" },
+            "X 命運之輪": { general: "循環、變化、命運、轉折點、機會、輪迴", work: "轉職、運氣轉變、意外機會", love: "緣分、關係變化、輪迴戀情", health: "循環性疾病、運氣恢復", reverse: "惡運、停滯、意外阻礙" },
+            "XI 力量": { general: "內在力量、勇氣、耐心、控制慾望、溫柔征服（托特稱Lust）", work: "克服困難、熱情投入、領導力", love: "激情、性吸引力、征服慾望", health: "強健體力、克服病痛", reverse: "軟弱、恐懼、慾望失控" },
+            "XII 倒吊人": { general: "犧牲、逆轉視角、放下、啟示、等待、轉變", work: "暫停、轉型期、犧牲短期利益", love: "犧牲、單戀、逆轉關係", health: "懸而未決的病、需要休息", reverse: "頑抗變化、無謂犧牲" },
+            "XIII 死亡": { general: "轉變、結束與新生、蛻變、不可避免的改變", work: "結束舊職、新開始、轉型", love: "關係結束、新戀情、分手", health: "手術、重大改變、康復", reverse: "停滯、害怕改變、腐敗" },
+            "XIV 節制": { general: "平衡、調和、融合對立、節制、療癒（托特稱Art）", work: "協調、團隊合作、中庸之道", love: "和諧關係、調適彼此", health: "平衡恢復、替代療法", reverse: "極端、衝突、不和" },
+            "XV 惡魔": { general: "束縛、慾望、物質依賴、陰影面、誘惑、權力遊戲", work: "金錢糾紛、權力鬥爭、成癮工作", love: "肉體關係、依賴、虐戀", health: "成癮、壓力", reverse: "解放、克服誘惑" },
+            "XVI 高塔": { general: "突變、破壞舊結構、啟示、覺醒、災難", work: "突發失業、公司重組、危機", love: "分手、關係崩潰、真相曝光", health: "突發疾病、意外", reverse: "避免災難、緩慢改變" },
+            "XVII 星星": { general: "希望、靈感、寧靜、療癒、宇宙指引", work: "靈感爆發、新方向、藝術創作", love: "理想愛情、遠距離、希望重燃", health: "康復、身心療癒", reverse: "失望、缺乏信心" },
+            "XVIII 月亮": { general: "幻象、恐懼、直覺、潛意識、欺騙、神秘", work: "不確定、隱藏風險、創意產業", love: "欺騙、不安、幻想愛情", health: "心理問題、婦科、夢魘", reverse: "真相浮現、克服恐懼" },
+            "XIX 太陽": { general: "喜悅、成功、活力、清晰、孩子、光明", work: "成功、認官、快樂工作", love: "幸福關係、生子、熱戀", health: "活力充沛、完全康復", reverse: "暫時陰霾、過度傲慢" },
+            "XX 永恆": { general: "審判、重生、覺醒、業力清算、新紀元（托特稱Aeon）", work: "重大轉變、業力回饋、呼召", love: "靈魂重逢、業力關係", health: "重生、重大療癒", reverse: "延遲、無法放下過去" },
+            "XXI 宇宙": { general: "完成、圓滿、整合、宇宙合一、旅程結束", work: "目標達成、升職、圓滿結案", love: "靈魂伴侶、婚姻、長久穩定", health: "完全康復、身心合一", reverse: "延遲、未完成、固執" },
             "權杖1": { general: "創造火花、新開始、潛能", work: "新專案、創業靈感", love: "新戀情火花", health: "活力開始", reverse: "延遲、缺乏動力" },
             "權杖2": { general: "規劃、選擇、支配", work: "事業規劃、決策", love: "關係選擇", health: "能量平衡", reverse: "猶豫不決" },
             "權杖3": { general: "建立、展望、商務", work: "事業擴張、遠景", love: "穩定發展", health: "活力穩定", reverse: "延遲實現" },
@@ -315,7 +172,7 @@
             "權杖9": { general: "堅韌、防備、力量", work: "堅持到底", love: "保護界線", health: "強韌體質", reverse: "疲憊" },
             "權杖10": { general: "負擔、過度努力、壓力", work: "工作過載", love: "壓力關係", health: "精疲力盡", reverse: "釋放負擔" },
             "權杖公主": { general: "熱情、創意、訊息使者", work: "新點子、年輕同事", love: "熱情追求者", health: "活力年輕", reverse: "不成熟" },
-            "權杖王子": { general: "冒險、熱情、衝動", work: "積極行動者", love: "熱戀追求", health: "運動型", reverse: "衝動魯莽" },
+            "權杖王子": { general: "冒險、熱情、衝動", work: "積極行動者", love: "熱戀追求", health: "運動型", reverse: "衝動魯貌" },
             "權杖皇后": { general: "自信、熱情、獨立女性", work: "領導女性", love: "性感自信伴侶", health: "活力充沛", reverse: "嫉妒" },
             "權杖騎士": { general: "行動、冒險、熱情領導", work: "創業家、領導者", love: "激情伴侶", health: "強健", reverse: "暴躁" },
             "聖杯1": { general: "情感開始、豐盛、喜悅", work: "創作滿足", love: "新戀情", health: "情感療癒", reverse: "情感阻塞" },
@@ -374,13 +231,11 @@
         let panOffsetX = 0, panOffsetY = 0;
         let initialMidX = 0, initialMidY = 0, initialOffsetX = 0, initialOffsetY = 0;
 
-        // 電腦中鍵平移
         let isPanning = false, startX, startY;
         window.addEventListener('mousedown', (e) => { if (e.button === 1) { e.preventDefault(); isPanning = true; startX = e.clientX - panOffsetX; startY = e.clientY - panOffsetY; } });
         window.addEventListener('mousemove', (e) => { if (!isPanning) return; panOffsetX = e.clientX - startX; panOffsetY = e.clientY - startY; mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`; });
         window.addEventListener('mouseup', (e) => { if (e.button === 1) { isPanning = false; } });
 
-        // 手機雙指平移
         mainCanvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const t1 = e.touches[0];
@@ -430,7 +285,7 @@
 
         function showTooltip(card, x, y) {
             const cardName = card.querySelector('.card-front').textContent.trim();
-            const meaning = cardMeanings[cardName] || { general: "牌義整理中...", work: "整理中...", love: "整理中...", health: "整理中...", reverse: "整理中..." };
+            const meaning = cardMeanings[cardName] || { general: "整理中...", work: "整理中...", love: "整理中...", health: "整理中...", reverse: "整理中..." };
             tooltip.innerHTML = `
                 <strong style="color:var(--gold); font-size:1.1rem;">${cardName}</strong>
                 <h4>一般含義</h4><p>${meaning.general}</p>
@@ -463,7 +318,6 @@
         function initCards() {
             table.innerHTML = '';
             deck.sort(() => Math.random() - 0.5);
-            const cards = [];
             for (let i = 0; i < 78; i++) {
                 const card = document.createElement('div');
                 card.className = 'card';
@@ -503,11 +357,8 @@
                         }
                     }
                 });
-                cards.push(card);
                 table.appendChild(card);
             }
-
-            if (isSpread) spreadCards();
         }
 
         function pickCard(card) {
@@ -526,10 +377,25 @@
             hideTooltip();
             isSpread = false;
             selectedCount = 0;
-            panOffsetX = 0;
-            panOffsetY = 0;
+            panOffsetX = 0; panOffsetY = 0;
             mainCanvas.style.transform = `translate(0,0)`;
-            initCards();
+            hint.innerText = "點擊牌堆展開 (雙指拖動/縮放桌面)";
+
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((c, i) => {
+                c.classList.remove('selected');
+                const angle = (i / 78) * 360;
+                const radius = 125; // 修改點：直徑小一半 (250 -> 125)
+                const x = Math.cos(angle * Math.PI / 180) * radius;
+                const y = Math.sin(angle * Math.PI / 180) * radius;
+                c.style.zIndex = i;
+                c.style.transform = `translate(${x}px, ${y}px) rotate(${angle + 90}deg)`;
+            });
+
+            setTimeout(() => {
+                cards.forEach((c) => { c.style.transform = `translate(0, 0) rotate(0deg)`; });
+                setTimeout(() => { initCards(); }, 800);
+            }, 600);
         }
 
         function makeDraggable(el) {
@@ -554,29 +420,45 @@
             };
         }
 
-        // 左側選單功能
+        // --- 左側選單邏輯：五大分類 ---
         const deckPanel = document.getElementById('deckPanel');
         const toggleBtn = document.getElementById('deckPanelToggle');
 
-        toggleBtn.onclick = () => {
-            deckPanel.classList.toggle('open');
-        };
+        toggleBtn.onclick = () => { deckPanel.classList.toggle('open'); };
 
-        // 動態產生選單按鈕
         function createDeckButtons() {
-            deckPanel.innerHTML = '';
+            deckPanel.innerHTML = '<h2 style="color:var(--gold); text-align:center;">選牌單單</h2>';
             const groups = [
                 { title: "大阿卡納", cards: thothCards.slice(0, 22) },
-                { title: "權杖組", cards: thothCards.filter(c => c.includes("權杖")) },
-                { title: "聖杯組", cards: thothCards.filter(c => c.includes("聖杯")) },
-                { title: "寶劍組", cards: thothCards.filter(c => c.includes("寶劍")) },
-                { title: "圓盤組", cards: thothCards.filter(c => c.includes("圓盤")) }
+                { title: "權杖", cards: thothCards.filter(c => c.includes("權杖")) },
+                { title: "聖杯", cards: thothCards.filter(c => c.includes("聖杯")) },
+                { title: "寶劍", cards: thothCards.filter(c => c.includes("寶劍")) },
+                { title: "圓盤", cards: thothCards.filter(c => c.includes("圓盤")) }
             ];
 
             groups.forEach(group => {
-                const h3 = document.createElement('h3');
-                h3.textContent = group.title;
-                deckPanel.appendChild(h3);
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'cat-group';
+
+                const titleBtn = document.createElement('button');
+                titleBtn.className = 'cat-title';
+                titleBtn.innerHTML = `<span>${group.title}</span> <span>+</span>`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'cat-content';
+
+                titleBtn.onclick = () => {
+                    const isActive = contentDiv.classList.contains('active');
+                    // 關閉其他
+                    document.querySelectorAll('.cat-content').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll('.cat-title span:last-child').forEach(s => s.textContent = '+');
+                    // 切換自己
+                    if(!isActive) {
+                        contentDiv.classList.add('active');
+                        titleBtn.querySelector('span:last-child').textContent = '-';
+                    }
+                };
+
                 group.cards.forEach(name => {
                     const btn = document.createElement('button');
                     btn.className = 'card-btn';
@@ -587,10 +469,14 @@
                         if (targetCard && !targetCard.classList.contains('selected')) {
                             pickCard(targetCard);
                         }
-                        deckPanel.classList.remove('open');
+                        deckPanel.classList.remove('open'); // 挑選後收起選單
                     };
-                    deckPanel.appendChild(btn);
+                    contentDiv.appendChild(btn);
                 });
+
+                groupDiv.appendChild(titleBtn);
+                groupDiv.appendChild(contentDiv);
+                deckPanel.appendChild(groupDiv);
             });
         }
 
