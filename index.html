@@ -62,8 +62,8 @@
 
         .card.flash { filter: brightness(1.8) drop-shadow(0 0 10px #fff); }
         .card-face { position: absolute; width: 100%; height: 100%; border-radius: 8px; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; box-sizing: border-box; }
-        .card-back { background: #4A3204; border: 2px solid #737373; z-index: 2; }
-        .card-back::after { content: "𖤓"; color: var(--gold); opacity: 0.4; font-size: 70px; }
+        .card-back { background: #4A3204; border: 2px solid #737373; z-index: 2; --pattern-content: "𖤓"; }
+        .card-back::after { content: var(--pattern-content, "𖤓"); color: var(--gold); opacity: 0.4; font-size: 70px; }
         
         .card-order {
             position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.85);
@@ -133,6 +133,39 @@
             border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.85rem;
         }
         .card-btn:hover { background: var(--gold); color: #000; border-color: var(--gold); }
+        
+        .custom-options {
+            margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(212,175,55,0.2);
+        }
+        .custom-options h3 {
+            color: var(--gold); font-size: 1rem; margin: 15px 0 10px; text-align: center;
+        }
+        .option-group {
+            margin-bottom: 15px;
+        }
+        .option-label {
+            color: #e0e0e0; font-size: 0.9rem; margin-bottom: 8px; display: block;
+        }
+        .color-options {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .color-btn {
+            width: 40px; height: 40px; border: 2px solid #666; border-radius: 6px;
+            cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+        }
+        .color-btn:hover { transform: scale(1.1); border-color: var(--gold); }
+        .color-btn.active { border-color: var(--gold); border-width: 3px; box-shadow: 0 0 10px rgba(212,175,55,0.5); }
+        .pattern-options {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .pattern-btn {
+            width: 50px; height: 50px; border: 2px solid #666; border-radius: 6px;
+            cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+            background: #4A3204; color: var(--gold); font-size: 24px; display: flex;
+            align-items: center; justify-content: center; opacity: 0.4;
+        }
+        .pattern-btn:hover { transform: scale(1.1); border-color: var(--gold); opacity: 0.7; }
+        .pattern-btn.active { border-color: var(--gold); border-width: 3px; opacity: 0.6; box-shadow: 0 0 10px rgba(212,175,55,0.5); }
     </style>
 </head>
 <body>
@@ -255,6 +288,7 @@
         let touchStartX = 0;
         let touchStartY = 0;
         let isDraggingCard = false;
+        let patternStyleElement = null;
 
         window.addEventListener('mousedown', (e) => { if (e.button === 1) { e.preventDefault(); isPanning = true; startX = e.clientX - panOffsetX; startY = e.clientY - panOffsetY; } });
         window.addEventListener('mousemove', (e) => { if (!isPanning) return; panOffsetX = e.clientX - startX; panOffsetY = e.clientY - startY; mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`; });
@@ -543,6 +577,116 @@
                 });
                 groupDiv.appendChild(titleBtn); groupDiv.appendChild(contentDiv); deckPanel.appendChild(groupDiv);
             });
+            
+            // 添加自訂選項區域
+            const customOptions = document.createElement('div');
+            customOptions.className = 'custom-options';
+            customOptions.innerHTML = '<h3>自訂樣式</h3>';
+            
+            // 背景色選擇（漸層配對）
+            const bgColorGroup = document.createElement('div');
+            bgColorGroup.className = 'option-group';
+            bgColorGroup.innerHTML = '<label class="option-label">背景色（星空漸層）</label><div class="color-options" id="bgColorOptions"></div>';
+            const bgGradients = [
+                { name: '預設晨昏', value1: '#423A09', value2: '#061857' },
+                { name: '紫到黑', value1: '#342063', value2: '#090A0F' },
+                { name: '藍到黑', value1: '#1a1a3e', value2: '#090A0F' },
+                { name: '綠到黑', value1: '#2d5016', value2: '#090A0F' },
+                { name: '褐到黑', value1: '#4a2c2a', value2: '#090A0F' },
+                { name: '深藍到紫', value1: '#1e3a5f', value2: '#342063' },
+                { name: '紫紅到黑', value1: '#5a1a4a', value2: '#090A0F' },
+                { name: '深綠到藍', value1: '#1e3d1e', value2: '#1a1a3e' }
+            ];
+            bgGradients.forEach((grad, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'color-btn';
+                // 創建漸層背景顯示
+                btn.style.background = `linear-gradient(to bottom, ${grad.value1}, ${grad.value2})`;
+                btn.dataset.color1 = grad.value1;
+                btn.dataset.color2 = grad.value2;
+                if (index === 0) btn.classList.add('active');
+                btn.onclick = () => {
+                    document.querySelectorAll('#bgColorOptions .color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // 更新 body 背景色
+                    document.body.style.background = grad.value1;
+                    // 更新星空背景漸層
+                    const starsContainer = document.getElementById('stars');
+                    starsContainer.style.background = `radial-gradient(ellipse at bottom, ${grad.value1} 0%, ${grad.value2} 100%)`;
+                };
+                bgColorGroup.querySelector('#bgColorOptions').appendChild(btn);
+            });
+            
+            // 牌背顏色選擇
+            const cardBackColorGroup = document.createElement('div');
+            cardBackColorGroup.className = 'option-group';
+            cardBackColorGroup.innerHTML = '<label class="option-label">牌的背面顏色</label><div class="color-options" id="cardBackColorOptions"></div>';
+            const cardBackColors = [
+                { name: '預設', value: '#4A3204' },
+                { name: '深褐', value: '#3d2813' },
+                { name: '深藍', value: '#1e3a5f' },
+                { name: '深紫', value: '#2d1b3d' },
+                { name: '墨綠', value: '#1e3d1e' },
+                { name: '黑色', value: '#1a1a1a' }
+            ];
+            cardBackColors.forEach(color => {
+                const btn = document.createElement('div');
+                btn.className = 'color-btn';
+                btn.style.backgroundColor = color.value;
+                btn.dataset.color = color.value;
+                if (color.value === '#4A3204') btn.classList.add('active');
+                btn.onclick = () => {
+                    document.querySelectorAll('#cardBackColorOptions .color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.querySelectorAll('.card-back').forEach(cb => {
+                        cb.style.backgroundColor = color.value;
+                    });
+                };
+                cardBackColorGroup.querySelector('#cardBackColorOptions').appendChild(btn);
+            });
+            
+            // 牌背圖案選擇
+            const cardBackPatternGroup = document.createElement('div');
+            cardBackPatternGroup.className = 'option-group';
+            cardBackPatternGroup.innerHTML = '<label class="option-label">牌背面的隨機圖案</label><div class="pattern-options" id="cardBackPatternOptions"></div>';
+            const patterns = [
+                { name: '預設', value: '𖤓' },
+                { name: '星', value: '★' },
+                { name: '月', value: '🌙' },
+                { name: '太陽', value: '☉' },
+                { name: '六芒星', value: '✡' },
+                { name: '圓', value: '●' },
+                { name: '菱形', value: '◆' },
+                { name: '三角形', value: '▲' }
+            ];
+            patterns.forEach(pattern => {
+                const btn = document.createElement('div');
+                btn.className = 'pattern-btn';
+                btn.textContent = pattern.value;
+                btn.dataset.pattern = pattern.value;
+                if (pattern.value === '𖤓') btn.classList.add('active');
+                btn.onclick = () => {
+                    document.querySelectorAll('#cardBackPatternOptions .pattern-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // 更新所有牌背的 CSS 變數
+                    document.querySelectorAll('.card-back').forEach(cb => {
+                        cb.style.setProperty('--pattern-content', `"${pattern.value}"`);
+                    });
+                    // 創建或更新全局樣式元素
+                    if (!patternStyleElement) {
+                        patternStyleElement = document.createElement('style');
+                        patternStyleElement.id = 'cardBackPatternStyle';
+                        document.head.appendChild(patternStyleElement);
+                    }
+                    patternStyleElement.textContent = `.card-back::after { content: var(--pattern-content, "${pattern.value}") !important; }`;
+                };
+                cardBackPatternGroup.querySelector('#cardBackPatternOptions').appendChild(btn);
+            });
+            
+            customOptions.appendChild(bgColorGroup);
+            customOptions.appendChild(cardBackColorGroup);
+            customOptions.appendChild(cardBackPatternGroup);
+            deckPanel.appendChild(customOptions);
         }
 
         createStars(); initCards(); createDeckButtons();
