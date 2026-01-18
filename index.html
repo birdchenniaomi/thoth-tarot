@@ -250,6 +250,10 @@
         let hoverTimer = null;
         let panOffsetX = 0, panOffsetY = 0, initialMidX = 0, initialMidY = 0, initialOffsetX = 0, initialOffsetY = 0;
         let isPanning = false, startX, startY;
+        let touchStartTime = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isDraggingCard = false;
 
         window.addEventListener('mousedown', (e) => { if (e.button === 1) { e.preventDefault(); isPanning = true; startX = e.clientX - panOffsetX; startY = e.clientY - panOffsetY; } });
         window.addEventListener('mousemove', (e) => { if (!isPanning) return; panOffsetX = e.clientX - startX; panOffsetY = e.clientY - startY; mainCanvas.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px)`; });
@@ -302,6 +306,11 @@
             tooltip.classList.add('visible');
         }
 
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+            clearTimeout(hoverTimer);
+        }
+
         function initCards() {
             table.innerHTML = '';
             deck.sort(() => Math.random() - 0.5);
@@ -317,7 +326,25 @@
                 `;
                 card.dataset.name = deck[i];
                 card.dataset.flipped = "false";
-                card.onclick = () => {
+                card.dataset.touchStartTime = "0";
+                card.dataset.touchStartX = "0";
+                card.dataset.touchStartY = "0";
+                
+                // 電腦版滑鼠 hover 顯示牌義
+                card.onmouseenter = (e) => {
+                    if (card.dataset.flipped === "true" && !('ontouchstart' in window)) {
+                        hoverTimer = setTimeout(() => showTooltip(card, e.clientX, e.clientY), 800);
+                    }
+                };
+                card.onmouseleave = () => { hideTooltip(); };
+                
+                // 點擊事件處理（電腦版和手機版）
+                card.onclick = (e) => {
+                    // 如果是觸控設備且正在拖動，不執行點擊動作
+                    if (isDraggingCard && 'ontouchstart' in window) {
+                        return;
+                    }
+                    
                     if (!isSpread) {
                         isSpread = true;
                         hint.innerText = "請點擊抽牌，點擊桌面上背面朝上的牌翻開";
@@ -326,16 +353,72 @@
                         pickCard(card);
                     } else if (card.dataset.flipped === "false") {
                         flipCard(card);
+                    } else if (card.dataset.flipped === "true" && 'ontouchstart' in window) {
+                        // 手機版：點擊已翻開的牌顯示牌義
+                        const rect = card.getBoundingClientRect();
+                        const x = rect.left + rect.width / 2;
+                        const y = rect.top + rect.height / 2;
+                        showTooltip(card, x, y);
                     }
                 };
-                card.onmouseenter = (e) => {
-                    if (card.dataset.flipped === "true" && !('ontouchstart' in window)) {
-                        hoverTimer = setTimeout(() => showTooltip(card, e.clientX, e.clientY), 800);
+                
+                // 觸控開始事件（用於檢測是否為拖動）
+                card.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        touchStartTime = Date.now();
+                        touchStartX = e.touches[0].clientX;
+                        touchStartY = e.touches[0].clientY;
+                        isDraggingCard = false;
+                        card.dataset.touchStartTime = touchStartTime.toString();
+                        card.dataset.touchStartX = touchStartX.toString();
+                        card.dataset.touchStartY = touchStartY.toString();
                     }
-                };
-                card.onmouseleave = () => { tooltip.classList.remove('visible'); clearTimeout(hoverTimer); };
+                }, { passive: true });
+                
+                // 觸控移動事件（如果移動距離過大，視為拖動）
+                card.addEventListener('touchmove', (e) => {
+                    if (e.touches.length === 1 && touchStartTime > 0) {
+                        const moveX = Math.abs(e.touches[0].clientX - touchStartX);
+                        const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+                        if (moveX > 5 || moveY > 5) {
+                            isDraggingCard = true;
+                        }
+                    }
+                }, { passive: true });
+                
+                // 點擊其他地方隱藏 tooltip
+                card.addEventListener('touchend', (e) => {
+                    if (e.touches.length === 0 && card.dataset.flipped === "true" && 'ontouchstart' in window) {
+                        const touchDuration = Date.now() - touchStartTime;
+                        const moveX = Math.abs((e.changedTouches[0]?.clientX || 0) - touchStartX);
+                        const moveY = Math.abs((e.changedTouches[0]?.clientY || 0) - touchStartY);
+                        
+                        // 如果是短按（小於 300ms）且移動距離小（小於 10px），視為點擊
+                        if (touchDuration < 300 && moveX < 10 && moveY < 10 && !isDraggingCard) {
+                            const rect = card.getBoundingClientRect();
+                            const x = rect.left + rect.width / 2;
+                            const y = rect.top + rect.height / 2;
+                            showTooltip(card, x, y);
+                        }
+                    }
+                }, { passive: true });
+                
                 table.appendChild(card);
             }
+            
+            // 點擊其他區域隱藏 tooltip
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.card') && !e.target.closest('#tooltip')) {
+                    hideTooltip();
+                }
+            });
+            
+            // 觸控設備：點擊其他地方隱藏 tooltip
+            document.addEventListener('touchend', (e) => {
+                if (!e.target.closest('.card') && !e.target.closest('#tooltip')) {
+                    hideTooltip();
+                }
+            }, { passive: true });
         }
 
         function spreadCards() {
@@ -381,7 +464,7 @@
         }
 
         function resetGame() {
-            tooltip.classList.remove('visible');
+            hideTooltip();
             isSpread = false; selectedCount = 0;
             panOffsetX = 0; panOffsetY = 0;
             mainCanvas.style.transform = `translate(0,0)`;
